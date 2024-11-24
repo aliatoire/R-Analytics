@@ -1,0 +1,249 @@
+---
+title: "amazon"
+output: pdf_document
+date: "2024-11-11"
+---
+
+```{r}
+# install.packages("rvest")
+# install.packages("httr")
+# install.packages("polite")
+
+library(rvest)
+library(httr)
+library(dplyr)
+
+library(polite)
+
+#install.packages("kableExtra")
+#library(kableExtra)
+#library(rmarkdown)
+```
+
+```{r}
+polite::use_manners(save_as = 'polite_scrape.R')
+```
+
+# Category: Clothes
+
+```{r}
+url <- 'https://www.amazon.com/s?k=clothes&rh=n%3A7141123011%2Cn%3A2368343011&dc&ds=v1%3An7ZU3KPlnV%2BL4ClBl2eZOCPKbhtQ9fCQ0qq%2F8YCDPkE&crid=351VWSQRNLZRB&qid=1731914453&rnid=2941120011&sprefix=%2Caps%2C322&ref=sr_nr_n_2'
+session <- bow(url,
+               user_agent = "Educational")
+session
+```
+
+```{r}
+product_name <- character(0)
+price <- numeric(0)
+description <- character(0)
+rating <- numeric(0)
+reviews <- character(0)
+```
+
+# Scraping product list
+
+```{r}
+product_list <- scrape(session) %>%
+  html_nodes('h2.a-size-mini.a-spacing-none.a-color-base.s-line-clamp-4') %>% 
+  html_text()
+```
+
+```{r}
+class(product_list)
+```
+
+```{r}
+product_list_sub <- as.data.frame(product_list[1:30])
+head(product_list_sub)
+```
+
+```{r}
+tail(product_list_sub)
+```
+
+# Scraping price list
+
+```{r}
+price_list <- scrape(session) %>%
+  html_nodes('span.a-price-whole') %>% 
+  html_text()
+```
+
+```{r}
+class(price_list)
+```
+
+```{r}
+price_list_sub <- as.data.frame(price_list[1:30])
+head(price_list_sub)
+```
+
+```{r}
+tail(price_list_sub)
+```
+
+```{r}
+colnames(price_list_sub) <- "number"
+
+#Split the string(rank and title)
+
+split_df <- strsplit(as.character(price_list_sub$number),".",fixed = TRUE)
+split_df <- data.frame(do.call(rbind,split_df))
+```
+
+```{r}
+colnames(split_df) <- "price"
+split_df
+```
+
+# Scraping ratings list
+
+```{r}
+ratings_list <- scrape(session) %>%
+  html_nodes('i.a-icon.a-icon-star-small.a-star-small-4-5') %>% 
+  html_text()
+```
+
+```{r}
+class(ratings_list)
+```
+
+```{r}
+ratings_list_sub <- as.data.frame(ratings_list[1:30])
+head(ratings_list_sub)
+```
+
+```{r}
+tail(ratings_list_sub)
+```
+
+# Split the string
+
+```{r}
+split_df2 <- strsplit(as.character(ratings_list_sub$ratings),"out of 5 stars",fixed = TRUE)
+split_df2 <- data.frame(do.call(rbind,split_df2))
+```
+
+```{r}
+colnames(split_df2) <- "ratings"
+split_df2
+```
+
+# Product link
+
+```{r}
+url2 <- 'https://www.amazon.com/AUTOMET-Womens-Shacket-Shackets-Apricot/dp/B09HC57WDZ/ref=sr_1_6?crid=28G6ZM5KI613R&dib=eyJ2IjoiMSJ9.blESJc7y9oh7YXHmVMar16XXdUtqQCqDgwBhrvTJG3VzPwDnqs8gijPkuZY4I2flv3cm6O7nW02A-DOBYURYyxfObFmc9HOGurOfd26iz6r3MxVcM53vc6kSN_BpqGE1B1jKTjIkymYP0kyuTVh8RGW1IzC6csh6GjOnbGu6U_vLnhS4EadlXUEk2qosRQzc5VPktNPojlV-V6eDdiEmjECnh4d7oszQ3nS5k_ZCHKYytunZG-R4hPi4VDveuHroWxKMGoFj0_JDDets1hWZen1seY_tEP5da8ofTZDibpw.6jnxWtScTNHMHqXMX2yIynOs9ZEca7YOl0Sxka48YM8&dib_tag=se&keywords=clothes&qid=1732439876&rnid=2941120011&s=apparel&sprefix=%2Caps%2C324&sr=1-6'
+session2 <- bow(url2,
+               user_agent = "Educational")
+session2
+```
+
+# Scraping description
+
+```{r}
+description1 <- scrape(session2) %>%
+  html_nodes('span.a-list-item.a-size-base.a-color-base') %>% 
+  html_text()
+```
+
+# Scraping review list
+
+```{r}
+review <- scrape(session2) %>%
+  html_nodes('span.a-size-base.review-text') %>% 
+  html_text()
+```
+
+```{r}
+class(review)
+```
+
+```{r}
+review_list <- as.data.frame(review[1:20])
+head(review_list)
+```
+
+```{r}
+colnames(review_list) <- "more"
+split_df3 <- strsplit(as.character(review_list$more),"Read more",fixed = TRUE)
+split_df3 <- data.frame(do.call(rbind,split_df3))
+```
+
+```{r}
+colnames(split_df3) <- "reviews"
+split_df3
+```
+
+#Cleaning the review dataframe
+
+```{r}
+split_df3$reviews <- gsub("\\n", "", split_df3$reviews)
+split_df3
+```
+```{r}
+split_df3$reviews <- gsub("\u2019", "'", split_df3$reviews)
+split_df3
+```
+
+# Product link
+
+```{r}
+url3 <- 'https://www.amazon.com/Trendy-Queen-Fashion-Outfits-Aesthetic/dp/B0BW8ZFMDJ/ref=sr_1_5?crid=28G6ZM5KI613R&dib=eyJ2IjoiMSJ9.blESJc7y9oh7YXHmVMar16XXdUtqQCqDgwBhrvTJG3VzPwDnqs8gijPkuZY4I2flv3cm6O7nW02A-DOBYURYyxfObFmc9HOGurOfd26iz6r3MxVcM53vc6kSN_BpqGE1B1jKTjIkymYP0kyuTVh8RGW1IzC6csh6GjOnbGu6U_ug79f4J2jd6jqRWKmgyo2XntgMPSrdYldEDmQLpGH0KCKfHwcFhCoodOjYhxvLq-yQTyosYXi0JKe4wMNDU-IiWxKMGoFj0_JDDets1hWZeiw5OpbwryFp2CqW0q5HX6k.pDH835GVP3zxplEIuivEelfaFu8dFxIBS6r2xHniLTk&dib_tag=se&keywords=clothes&qid=1732450063&rnid=2941120011&s=apparel&sprefix=%2Caps%2C324&sr=1-5'
+session3 <- bow(url3,
+               user_agent = "Educational")
+session3
+```
+
+# Scraping description
+
+```{r}
+description2 <- scrape(session3) %>%
+  html_nodes('span.a-list-item.a-size-base.a-color-base') %>% 
+  html_text()
+```
+
+# Scraping review list
+
+```{r}
+review2 <- scrape(session3) %>%
+  html_nodes('span.a-size-base.review-text') %>% 
+  html_text()
+```
+
+```{r}
+class(review2)
+```
+
+```{r}
+review_list2 <- as.data.frame(review2[1:20])
+head(review_list2)
+```
+
+# Split the string
+
+```{r}
+colnames(review_list2) <- "more"
+split_df4 <- strsplit(as.character(review_list2$more),"Read more",fixed = TRUE)
+split_df4 <- data.frame(do.call(rbind,split_df4))
+```
+
+```{r}
+colnames(split_df4) <- "reviews"
+split_df4
+```
+
+# Cleaning the review dataframe
+
+```{r}
+split_df4$reviews <- gsub("\\n", " ", split_df4$reviews)
+split_df4
+```
+
+```{r}
+split_df4$reviews <- gsub("\u2019", "'", split_df4$reviews)
+split_df4
+```
+
+
+
